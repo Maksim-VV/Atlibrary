@@ -9,22 +9,22 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
+import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
+import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.context.junit4.SpringRunner;
 import org.springframework.test.web.servlet.MockMvc;
 
-import java.util.Collections;
-
-import static org.hamcrest.Matchers.is;
 import static org.mockito.Mockito.*;
 import static org.springframework.http.MediaType.APPLICATION_JSON_UTF8;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 
 @RunWith(SpringRunner.class)
-@WebMvcTest(BookController.class)
+@SpringBootTest
+@AutoConfigureMockMvc
 public class BookControllerTest {
 
     @Autowired
@@ -40,14 +40,13 @@ public class BookControllerTest {
     private final String TEST_BOOK_NAME = "Му-му";
     private final String TEST_AUTHOR = "Тургенев";
     private final String TEST_GENRE = "Драма";
-    static final String PAGE = "index";
 
     @Before
     public void setUp() throws Exception {
         createTestBook();
     }
 
-
+    @WithMockUser
     @Test
     public void addNewBook() throws Exception {
         BookDto bookDto = new BookDto(1L, TEST_BOOK_NAME, null, null);
@@ -60,13 +59,17 @@ public class BookControllerTest {
                 .addNewBook(bookDto.getBookName(), bookDto.getAuthorName(), bookDto.getGenreName());
     }
 
+
+    @WithMockUser
     @Test
     public void getBookById() throws Exception {
-       when(bookService.bookByName(bookService.getBookByBookId(1L))).thenReturn(testBook);
-        mvc.perform(get("/api/v1/books/" + "?id=1")).andExpect(status().isOk());
+        when(bookService.getBookByBookId(1L)).thenReturn(TEST_BOOK_NAME);
+        when(bookService.bookByName(TEST_BOOK_NAME)).thenReturn(testBook);
+        mvc.perform(get("/api/v1/books/1")).andExpect(status().isOk());
         verify(bookService, times(1)).getBookByBookId(1L);
     }
 
+    @WithMockUser
     @Test
     public void deleteById() throws Exception {
         this.mvc.perform(delete("/api/v1/books/1"))
